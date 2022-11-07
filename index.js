@@ -18,8 +18,9 @@ let tasks = [
   },
 ];
 
-app.use(express.json());
+app.use(express.static("build"));
 app.use(cors());
+app.use(express.json());
 
 app.get("/api/tasks/:id", (request, response) => {
   const id = request.params.id;
