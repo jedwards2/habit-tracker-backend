@@ -1,39 +1,30 @@
+require("dotenv").config();
 const express = require("express");
 const uniqid = require("uniqid");
 const cors = require("cors");
 const app = express();
-
-let tasks = [
-  {
-    streak_start: new Date("2022-10-3"),
-    updated_last: new Date("1970"),
-    content: "Take out yimmy",
-    id: "fbvykxcxala6st8v5",
-  },
-  {
-    streak_start: new Date("2022-11-3"),
-    updated_last: new Date("2022-11-3"),
-    content: "CloFucknk",
-    id: "fbvykxcxfia6st8v4",
-  },
-];
+const Task = require("./models/task");
 
 app.use(express.static("build"));
 app.use(cors());
 app.use(express.json());
 
-app.get("/api/tasks/:id", (request, response) => {
-  const id = request.params.id;
-  const task = tasks.find((task) => task.id === id);
-  if (task) {
-    response.json(task);
-  } else {
-    response.status(404).end();
-  }
+app.get("/api/tasks/:id", (request, response, next) => {
+  Task.findById(request.params.id)
+    .then((task) => {
+      if (task) {
+        response.json(task);
+      } else {
+        response.status(404).end();
+      }
+    })
+    .catch((error) => next(error));
 });
 
 app.get("/api/tasks", (request, response) => {
-  response.json(tasks);
+  Task.find({}).then((tasks) => {
+    response.json(tasks);
+  });
 });
 
 app.get("/", (request, response) => {
@@ -41,10 +32,11 @@ app.get("/", (request, response) => {
 });
 
 app.delete("/api/tasks/:id", (request, response) => {
-  const id = request.params.id;
-  tasks = tasks.filter((task) => task.id !== id);
-
-  response.status(204).end();
+  Task.findByIdAndRemove(request.params.id)
+    .then((result) => {
+      response.status(204).end();
+    })
+    .catch((error) => next(error));
 });
 
 app.post("/api/tasks", (request, response) => {
@@ -56,19 +48,19 @@ app.post("/api/tasks", (request, response) => {
     });
   }
 
-  const task = {
+  const task = new Task({
     content: body.content,
     streak_start: new Date(),
     updated_last: "1970",
     id: uniqid(),
-  };
-  tasks = tasks.concat(task);
+  });
 
-  response.json(task);
+  task.save().then((savedTask) => {
+    response.json(savedTask);
+  });
 });
 
-app.put("/api/tasks/:id", (request, response) => {
-  const id = request.params.id;
+app.put("/api/tasks/:id", (request, response, next) => {
   const body = request.body;
 
   const task = {
@@ -78,12 +70,32 @@ app.put("/api/tasks/:id", (request, response) => {
     id: body.id,
   };
 
-  tasks = tasks.filter((task) => task.id !== id);
-  tasks = tasks.concat(task);
-  response.json(task);
+  Task.findByIdAndUpdate(request.params.id, task, { new: true })
+    .then((updatedTask) => {
+      response.json(updatedTask);
+    })
+    .catch((error) => next(error));
 });
 
-const PORT = process.env.PORT || 3001;
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: "unknown endpoint" });
+};
+
+app.use(unknownEndpoint);
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message);
+
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "malformatted id" });
+  }
+
+  next(error);
+};
+
+app.use(errorHandler);
+
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
