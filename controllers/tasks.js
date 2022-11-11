@@ -2,6 +2,12 @@ const tasksRouter = require("express").Router();
 const Task = require("../models/task");
 const uniqid = require("uniqid");
 
+tasksRouter.get("/", (request, response) => {
+  Task.find({}).then((tasks) => {
+    response.json(tasks);
+  });
+});
+
 tasksRouter.get("/:id", (request, response, next) => {
   Task.findById(request.params.id)
     .then((task) => {
@@ -12,12 +18,6 @@ tasksRouter.get("/:id", (request, response, next) => {
       }
     })
     .catch((error) => next(error));
-});
-
-tasksRouter.get("/", (request, response) => {
-  Task.find({}).then((tasks) => {
-    response.json(tasks);
-  });
 });
 
 tasksRouter.delete("/:id", (request, response) => {
