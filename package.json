@@ -6,10 +6,8 @@
   "scripts": {
     "start": "NODE_ENV=production node index.js",
     "dev": "NODE_ENV=development nodemon index.js",
-    "build:ui": "rm -rf build && cd ../habit-frontend/ && npm run build && cp -r build ../habit-backend",
-    "deploy": "git push heroku main",
-    "deploy:full": "npm run build:ui && git add . && git commit -m uibuild && npm run deploy",
-    "logs:prod": "heroku logs --tail",
+    "build:ui": "rm -rf build && cd ../habit-tracker-frontend/ && npm run build && cp -r build ../habit-tracker-backend",
+    "deploy:full": "npm run build:ui && npm run deploy",
     "test": "NODE_ENV=test jest --verbose --runInBand --forceExit"
   },
   "author": "",
